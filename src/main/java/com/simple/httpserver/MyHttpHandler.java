@@ -8,7 +8,6 @@ import sun.misc.IOUtils;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
-import javax.persistence.Query;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,7 +20,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-//import java.util.logging.Logger;
 
 public class MyHttpHandler implements HttpHandler {
     static final Logger log = Logger.getLogger(String.valueOf(MyHttpHandler.class));
@@ -37,7 +35,7 @@ public class MyHttpHandler implements HttpHandler {
         log.info(httpExchange.getRequestMethod());
         if ("GET".equals(httpExchange.getRequestMethod())) {
 
-            requestParamValue = handleGetRequest(httpExchange);
+            requestParamValue = handleGetRequest();
 
         } else if ("POST".equals(httpExchange.getRequestMethod())) {
 
@@ -61,7 +59,7 @@ public class MyHttpHandler implements HttpHandler {
             em.persist(user);
             em.getTransaction().commit();
             emf.close();
-            return mapper.writeValueAsString(user)+"added";
+            return mapper.writeValueAsString(user) + "added";
         } else {
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
@@ -101,8 +99,7 @@ public class MyHttpHandler implements HttpHandler {
             rs.next();
             user.setAccountID(rs.getLong("accountID"));
             con.close();
-            String userString = mapper.writeValueAsString(user);
-            return userString;
+            return mapper.writeValueAsString(user);
 
         } catch (Exception e) {
 
@@ -113,7 +110,7 @@ public class MyHttpHandler implements HttpHandler {
         return " {" + "\"error\":\"error adding user\"\n" + "}";
     }
 
-    private String handleGetRequest(HttpExchange httpExchange) throws IOException {
+    private String handleGetRequest() throws IOException {
 //get users from db
 
         List<User> users = new ArrayList<>();
@@ -140,33 +137,22 @@ public class MyHttpHandler implements HttpHandler {
         } catch (Exception e) {
             log.severe("got exception");
         }
-        try {
 
-        } catch (Exception e) {
-
-        }
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(out, users);
-        String result = out.toString();
-        return result;
+        return out.toString();
     }
 
     private void handleResponse(HttpExchange httpExchange, String requestParamValue) throws IOException {
         OutputStream outputStream = httpExchange.getResponseBody();
-        StringBuilder htmlBuilder = new StringBuilder();
-        htmlBuilder.append(requestParamValue);
-        String htmlResponse = htmlBuilder.toString();
         httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
         httpExchange.getResponseHeaders().add("Content-Type", "application/json");
         httpExchange.getResponseHeaders().add("Status", "200");
-//        httpExchange.getResponseHeaders().add("Content-Length","10000" );
-        //  httpExchange.getResponseHeaders().add("Content-Length", "Filesize($cache_file)");
         httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD, PUT, POST");
-        //httpExchange.sendResponseHeaders(200, 10000L);
-        httpExchange.sendResponseHeaders(200, htmlResponse.length());
+        httpExchange.sendResponseHeaders(200, requestParamValue.length());
 
-        outputStream.write(htmlResponse.getBytes());
+        outputStream.write(requestParamValue.getBytes());
         outputStream.flush();
         outputStream.close();
     }
