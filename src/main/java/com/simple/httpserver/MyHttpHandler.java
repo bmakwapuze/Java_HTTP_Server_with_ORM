@@ -61,53 +61,25 @@ public class MyHttpHandler implements HttpHandler {
             emf.close();
             return mapper.writeValueAsString(user) + "added";
         } else {
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                Connection con = DriverManager.getConnection(url, userName, psw);
-                Statement st = con.createStatement();
-                String sql = "SELECT PASSWORD FROM details WHERE email='" + user.getEmail() + "';";
-                ResultSet rs = st.executeQuery(sql);
-                if (!rs.next()) {
-//                    log.info("account not found");
+
+            EntityManagerFactory emf = Persistence.createEntityManagerFactory("clientDetailsPU");
+            EntityManager em = emf.createEntityManager();
+            User p = em.find(User.class, user.getEmail());
+                if (p.getPassword().equals(user.getPassword())) {
+                    return "\n" +
+                            "{\n" +
+                            "    \"login\":\"successful\"\n" +
+                            "}\n" +
+                            "  ";
+//                    log.info("everything is working");
                 } else {
-                    if (rs.getString("PASSWORD").equals(user.getPassword())) {
-                        return "\n" +
-                                "{\n" +
-                                "    \"login\":\"successful\"\n" +
-                                "}\n" +
-                                "  ";
-//                        log.info("everything is working");
-                    } else {
-                        log.info(user.getPassword());
-                        return "{\"message\":\"invalid username or password\"}";
-//                        log.info(rs.getString("PASSWORD"));
-//                        log.info("there is a problem");
-                    }
+                    log.info(user.getPassword());
+                    return "{\"message\":\"invalid username or password\"}";
+
                 }
-            } catch (Exception ignored) {
-
-            }
 
         }
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection con = DriverManager.getConnection(url, userName, psw);
-            Statement st = con.createStatement();
-            String sql = "SELECT * FROM details WHERE email='" + user.getEmail() + "';";
-            ResultSet rs = st.executeQuery(sql);
-            rs.next();
-            user.setAccountID(rs.getLong("accountID"));
-            con.close();
-            return mapper.writeValueAsString(user);
-
-        } catch (Exception e) {
-
-            log.severe(e.toString());
-
-        }
-
-        return " {" + "\"error\":\"error adding user\"\n" + "}";
     }
 
     private String handleGetRequest() throws IOException {
